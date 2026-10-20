@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DIANA - Upload tool</title>
+<title>DIANA - Connect your TikTok</title>
 <link rel="icon" type="image/png" href="icon.png">
 <style>
 :root{--ink:#16213e;--bg:#f7f5f2;--acc:#e8466a;--mut:#5b6478}
@@ -16,25 +16,16 @@ header a{color:var(--ink);text-decoration:none;font-weight:700;letter-spacing:.1
 .box{background:#fff;border:1px solid #ddd8d0;border-radius:10px;padding:24px;margin-top:26px}
 h2{margin:0 0 8px;font-size:20px}
 button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:12px 22px;font:600 16px system-ui;cursor:pointer}
-button:disabled{opacity:.5;cursor:wait}
 button.lk{background:none;color:var(--mut);padding:4px 8px;font:14px system-ui;text-decoration:underline;margin-left:auto}
 button.sec{background:#fff;color:var(--ink);border:1px solid #bbb4a8}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 ul{list-style:none;padding:0;margin:12px 0}
-#list li{padding:18px 0;border-bottom:1px solid #eee}
+#list li{padding:14px 0;border-bottom:1px solid #eee}
 .top{display:flex;align-items:center;gap:10px}
 .top img{width:36px;height:36px;border-radius:50%}
-#list p{margin:8px 0 0;font-size:15px}
-input[type=file]{display:block;margin:14px 0}
-label.f{display:block;margin:12px 0 4px;font-size:14px;font-weight:600;color:var(--mut)}
-select,textarea{width:100%;font:15px system-ui;color:var(--ink);background:#fff;border:1px solid #bbb4a8;border-radius:8px;padding:9px 10px}
-textarea{resize:vertical;min-height:70px}
-.opts{margin:6px 0 0}
-.opts label{display:block;font-size:15px;margin:4px 0;cursor:pointer}
-.hint{font-size:13px;color:var(--mut);margin:4px 0 0}
-.direct{margin-top:6px}
+.ok{margin:6px 0 0;font-size:14px;color:#1b7a3d}
 #msg{margin-top:16px;color:var(--mut)}
-.err{color:#b3261e!important}.ok{color:#1b7a3d!important}
+.err{color:#b3261e!important}
 footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14px;color:var(--mut)}
 </style>
 </head>
@@ -44,13 +35,13 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 
 <div class="box" id="out">
 <h2>Connect your TikTok</h2>
-<p>Log in so DIANA can send your videos to TikTok, either as a draft or as a post you publish from here. You approve access on TikTok, and you can remove an account here at any time.</p>
+<p>Log in so DIANA can post your videos to your TikTok account. You approve access on TikTok, and you can remove an account here at any time.</p>
 <button id="login">Login with TikTok</button>
 </div>
 
 <div class="box" id="in" hidden>
 <h2>Your TikTok accounts</h2>
-<p>Each account has its own video, caption and Upload button.</p>
+<p>These accounts are connected to DIANA. You can add as many as you need.</p>
 <ul id="list"></ul>
 <button class="sec" id="add">Add another TikTok account</button>
 </div>
@@ -63,10 +54,7 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 /* ===== CHANGE THESE WHEN NEEDED (sandbox vs production) ===== */
 const CFG={
   clientKey:"awh7jozdztrtubpy",
-  redirectUri:"https://diana.jawadquresh0310.workers.dev/callback",
-  uploadUrl:"https://diana.jawadquresh0310.workers.dev/upload",
-  /* Direct Post needs video.publish. Set to false to go back to drafts only. */
-  directPost:true
+  redirectUri:"https://diana.jawadquresh0310.workers.dev/callback"
 };
 /* =========================================================== */
 const $=id=>document.getElementById(id),S=sessionStorage,L=localStorage;
@@ -82,77 +70,12 @@ function render(){
   a.forEach((x,i)=>{
     const li=el("li"),top=el("div",{className:"top"}),im=el("img",{alt:""}),
       nm=el("b",{textContent:x.name||"TikTok account"}),
-      rm=el("button",{className:"lk",textContent:"Remove"}),
-      f=el("input",{type:"file",accept:"video/mp4,video/quicktime"}),
-      up=el("button",{textContent:"Upload to this account's drafts"}),
-      st=el("p");
+      rm=el("button",{className:"lk",textContent:"Remove"});
     im.src=/^https:/.test(x.avatar||"")?x.avatar:"icon.png";
     rm.onclick=()=>{put(get().filter((_,j)=>j!==i));render()};
     top.append(im,nm,rm);
-    f.setAttribute("aria-label","Video for "+nm.textContent);
-    f.style.cssText="display:block;margin:12px 0";
-    st.setAttribute("role","status");
-    li.append(top,f);
-
-    /* Direct Post controls (shown only when CFG.directPost is true) */
-    let mode="draft",cap=null,priv=null;
-    if(CFG.directPost){
-      const name="mode"+i;
-      const opts=el("div",{className:"opts"});
-      const l1=el("label"),r1=el("input",{type:"radio",name,value:"draft",checked:true});
-      l1.append(r1," Save to my TikTok drafts");
-      const l2=el("label"),r2=el("input",{type:"radio",name,value:"direct"});
-      l2.append(r2," Post directly to TikTok");
-      opts.append(l1,l2);li.append(opts);
-
-      const dbox=el("div",{className:"direct"});dbox.hidden=true;
-      const cl=el("label",{className:"f",textContent:"Caption"});
-      cap=el("textarea",{maxLength:2200,placeholder:"Write a caption with hashtags"});
-      cl.htmlFor=cap.id="cap"+i;
-      const pl=el("label",{className:"f",textContent:"Who can watch"});
-      priv=el("select");pl.htmlFor=priv.id="priv"+i;
-      [["SELF_ONLY","Only me (private)"],["PUBLIC_TO_EVERYONE","Everyone (public)"],
-       ["FOLLOWER_OF_CREATOR","Followers"],["MUTUAL_FOLLOW_FRIENDS","Friends"]]
-        .forEach(([v,t])=>priv.append(el("option",{value:v,textContent:t})));
-      const hint=el("p",{className:"hint",textContent:"Until TikTok approves this app, posts can only be private. Public posting starts working after approval."});
-      dbox.append(cl,cap,pl,priv,hint);li.append(dbox);
-
-      const sync=()=>{
-        mode=r2.checked?"direct":"draft";
-        dbox.hidden=mode!=="direct";
-        up.textContent=mode==="direct"?"Post to this account":"Upload to this account's drafts";
-      };
-      r1.onchange=sync;r2.onchange=sync;
-    }
-
-    up.onclick=async()=>{
-      const file=f.files[0],bad=m=>{st.textContent=m;st.className="err"};
-      if(!file)return bad("Choose a video first.");
-      if(file.size>50*1024*1024)return bad("This video is over 50 MB. Choose a smaller one.");
-      const headers={"X-Sid":x.sid,"X-Size":file.size};
-      /* Extra headers are sent only for Direct Post, so draft uploads keep working as before. */
-      if(mode==="direct"){
-        headers["X-Mode"]="direct";
-        headers["X-Privacy"]=priv.value;
-        headers["X-Title"]=encodeURIComponent(cap.value.trim());
-      }
-      up.disabled=true;st.className="";st.textContent="Uploading...";
-      try{
-        const r=await fetch(CFG.uploadUrl,{method:"POST",headers,body:file});
-        const j=await r.json();
-        if(j.ok){
-          if(mode==="direct"&&j.mode!=="direct"){
-            st.textContent="Uploaded, but the server saved it as a draft. The server needs the Direct Post update.";st.className="err";
-          }else if(mode==="direct"){
-            st.textContent=j.message||"Sent to TikTok for posting. It can take a minute to appear on your profile.";st.className="ok";
-          }else{
-            st.textContent="Uploaded. Check this account's TikTok inbox for the draft.";st.className="ok";
-          }
-        }else bad(j.error||"Upload failed.");
-      }catch(e){bad("Network error. Please try again.")}
-      up.disabled=false;
-    };
-    li.append(up,st);ul.append(li);
+    li.append(top,el("p",{className:"ok",textContent:"Connected"}));
+    ul.append(li);
   });
 }
 
@@ -172,13 +95,12 @@ render();
 
 function login(){
   const st=crypto.randomUUID();S.setItem("st",st);
-  const scope=CFG.directPost?"user.info.basic,video.upload,video.publish":"user.info.basic,video.upload";
   location.href="https://www.tiktok.com/v2/auth/authorize/?"+new URLSearchParams({
-    client_key:CFG.clientKey,scope,
+    client_key:CFG.clientKey,
+    scope:"user.info.basic,video.upload,video.publish",
     response_type:"code",redirect_uri:CFG.redirectUri,state:st});
 }
 $("login").onclick=login;$("add").onclick=login;
-
 </script>
 </body>
 </html>
