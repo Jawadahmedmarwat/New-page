@@ -9,16 +9,22 @@
 :root{--ink:#16213e;--bg:#f7f5f2;--acc:#e8466a;--mut:#5b6478}
 *{box-sizing:border-box}
 body{margin:0;font:17px/1.6 system-ui,sans-serif;color:var(--ink);background:var(--bg)}
-.w{max-width:520px;margin:0 auto;padding:28px 22px}
+.w{max-width:540px;margin:0 auto;padding:28px 22px}
 header{display:flex;align-items:center;gap:12px}
 header img{width:44px;height:44px;border-radius:10px}
 header a{color:var(--ink);text-decoration:none;font-weight:700;letter-spacing:.12em}
 .box{background:#fff;border:1px solid #ddd8d0;border-radius:10px;padding:24px;margin-top:26px}
-button,.btn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:12px 22px;font:600 16px system-ui;cursor:pointer}
+h2{margin:0 0 8px;font-size:20px}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:12px 22px;font:600 16px system-ui;cursor:pointer}
 button:disabled{opacity:.5;cursor:wait}
+button.lk{background:none;color:var(--mut);padding:4px 8px;font:14px system-ui;text-decoration:underline;margin-left:auto}
+button.sec{background:#fff;color:var(--ink);border:1px solid #bbb4a8}
 button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-.me{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-.me img{width:56px;height:56px;border-radius:50%}
+ul{list-style:none;padding:0;margin:12px 0}
+#list li{padding:18px 0;border-bottom:1px solid #eee}
+.top{display:flex;align-items:center;gap:10px}
+.top img{width:36px;height:36px;border-radius:50%}
+#list p{margin:8px 0 0;font-size:15px}
 input[type=file]{display:block;margin:14px 0}
 #msg{margin-top:16px;color:var(--mut)}
 .err{color:#b3261e!important}.ok{color:#1b7a3d!important}
@@ -30,17 +36,16 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 <header><img src="icon.png" alt="DIANA logo"><a href="index.html">DIANA</a></header>
 
 <div class="box" id="out">
-<h2 style="margin-top:0">Connect your TikTok</h2>
-<p>Log in so DIANA can show your account and send videos to your TikTok drafts.</p>
+<h2>Connect your TikTok</h2>
+<p>Log in so DIANA can send videos to your TikTok drafts. You approve access on TikTok, and you can remove an account here at any time.</p>
 <button id="login">Login with TikTok</button>
 </div>
 
 <div class="box" id="in" hidden>
-<div class="me"><img id="av" alt="Your TikTok avatar"><div><small>Connected as</small><br><b id="nm"></b></div></div>
-<label for="f"><b>Choose a video (MP4, up to 50 MB)</b></label>
-<input id="f" type="file" accept="video/mp4,video/quicktime">
-<button id="up">Upload to my TikTok drafts</button>
-<p><a href="#" id="lo">Log out</a></p>
+<h2>Your TikTok accounts</h2>
+<p>Each account has its own video and its own Upload button.</p>
+<ul id="list"></ul>
+<button class="sec" id="add">Add another TikTok account</button>
 </div>
 <p id="msg" role="status"></p>
 
@@ -50,52 +55,70 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 <script>
 /* ===== CHANGE THESE WHEN NEEDED (sandbox vs production) ===== */
 const CFG={
-  clientKey:"sbaw1e9gxcnt49v8fh",
-  redirectUri:"https://waqaskhanmarwat.app.n8n.cloud/webhook/1f7184af-7095-4a21-a62e-cbe9efbfd4de",
-  uploadUrl:"https://waqaskhanmarwat.app.n8n.cloud/webhook/diana-upload"
+  clientKey:"awh7jozdztrtubpy",
+  redirectUri:"https://diana.jawadquresh0310.workers.dev/callback",
+  uploadUrl:"https://diana.jawadquresh0310.workers.dev/upload"
 };
 /* =========================================================== */
-const $=id=>document.getElementById(id),S=sessionStorage;
+const $=id=>document.getElementById(id),S=sessionStorage,L=localStorage;
+const get=()=>{try{return JSON.parse(L.getItem("diana_accts")||"[]")}catch(e){return[]}};
+const put=a=>L.setItem("diana_accts",JSON.stringify(a));
 const say=(t,c)=>{$("msg").textContent=t;$("msg").className=c||""};
 
-function show(){
-  const s=JSON.parse(S.getItem("diana")||"null");
-  $("out").hidden=!!s;$("in").hidden=!s;
-  if(s){$("nm").textContent=s.name;$("av").src=s.avatar}
+function render(){
+  const a=get();
+  $("out").hidden=a.length>0;$("in").hidden=!a.length;
+  const ul=$("list");ul.textContent="";
+  a.forEach((x,i)=>{
+    const li=document.createElement("li"),top=document.createElement("div"),im=document.createElement("img"),
+      nm=document.createElement("b"),rm=document.createElement("button"),f=document.createElement("input"),
+      up=document.createElement("button"),st=document.createElement("p");
+    top.className="top";im.alt="";im.src=/^https:/.test(x.avatar||"")?x.avatar:"icon.png";
+    nm.textContent=x.name||"TikTok account";
+    rm.className="lk";rm.textContent="Remove";rm.onclick=()=>{put(get().filter((_,j)=>j!==i));render()};
+    top.append(im,nm,rm);
+    f.type="file";f.accept="video/mp4,video/quicktime";f.setAttribute("aria-label","Video for "+nm.textContent);
+    f.style.cssText="display:block;margin:12px 0";
+    up.textContent="Upload to this account's drafts";st.setAttribute("role","status");
+    up.onclick=async()=>{
+      const file=f.files[0],bad=m=>{st.textContent=m;st.className="err"};
+      if(!file)return bad("Choose a video first.");
+      if(file.size>50*1024*1024)return bad("This video is over 50 MB. Choose a smaller one.");
+      up.disabled=true;st.className="";st.textContent="Uploading...";
+      try{
+        const r=await fetch(CFG.uploadUrl,{method:"POST",headers:{"X-Sid":x.sid,"X-Size":file.size},body:file});
+        const j=await r.json();
+        if(j.ok){st.textContent="Uploaded. Check this account's TikTok inbox for the draft.";st.className="ok"}
+        else bad(j.error||"Upload failed.");
+      }catch(e){bad("Network error. Please try again.")}
+      up.disabled=false;
+    };
+    li.append(top,f,up,st);ul.append(li);
+  });
 }
-// Back from TikTok via n8n: #token=..&name=..&avatar=..&state=..
+
+// Back from TikTok via the Worker: #sid=..&open=..&name=..&avatar=..&state=..
 if(location.hash.length>1){
   const h=new URLSearchParams(location.hash.slice(1));
-  if(h.get("token")&&h.get("state")===S.getItem("st")){
-    S.setItem("diana",JSON.stringify({token:h.get("token"),name:h.get("name"),avatar:h.get("avatar")}));
-  }else if(h.get("token")){say("Login check failed. Please try again.","err")}
+  if(h.get("sid")){
+    if(h.get("state")===S.getItem("st")){
+      const a=get().filter(x=>x.open!==h.get("open"));
+      a.push({sid:h.get("sid"),open:h.get("open"),name:h.get("name"),avatar:h.get("avatar"),on:true});
+      put(a);
+    }else say("Login check failed. Please try again.","err");
+  }
   history.replaceState(null,"",location.pathname);
 }
-show();
+render();
 
-$("login").onclick=()=>{
+function login(){
   const st=crypto.randomUUID();S.setItem("st",st);
   location.href="https://www.tiktok.com/v2/auth/authorize/?"+new URLSearchParams({
     client_key:CFG.clientKey,scope:"user.info.basic,video.upload",
     response_type:"code",redirect_uri:CFG.redirectUri,state:st});
-};
-$("lo").onclick=e=>{e.preventDefault();S.removeItem("diana");say("");show()};
+}
+$("login").onclick=login;$("add").onclick=login;
 
-$("up").onclick=async()=>{
-  const file=$("f").files[0],s=JSON.parse(S.getItem("diana")||"null");
-  if(!file)return say("Choose a video first.","err");
-  if(file.size>50*1024*1024)return say("This video is over 50 MB. Choose a smaller one.","err");
-  const fd=new FormData();
-  fd.append("token",s.token);fd.append("size",file.size);fd.append("video",file,file.name);
-  $("up").disabled=true;say("Uploading...");
-  try{
-    const r=await fetch(CFG.uploadUrl,{method:"POST",body:fd});
-    const j=await r.json();
-    if(j.ok){say("Uploaded. Open TikTok and check your inbox for the draft.","ok")}
-    else{say("TikTok could not accept the video: "+(j.error||"unknown error"),"err")}
-  }catch(e){say("Upload failed. Check that the n8n workflow is active.","err")}
-  $("up").disabled=false;
-};
 </script>
 </body>
 </html>
