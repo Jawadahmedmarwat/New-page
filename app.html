@@ -3,29 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DIANA - Connect your TikTok</title>
+<title>DIANA - Post to TikTok</title>
+<meta name="description" content="DIANA lets creators post their own videos to their TikTok account from the web.">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
-:root{--ink:#16213e;--bg:#f7f5f2;--acc:#e8466a;--mut:#5b6478}
+:root{--ink:#16213e;--bg:#f7f5f2;--acc:#e8466a;--mut:#5b6478;--line:#ddd8d0;--bad:#b3261e;--good:#1b7a3d}
 *{box-sizing:border-box}
-body{margin:0;font:17px/1.6 system-ui,sans-serif;color:var(--ink);background:var(--bg)}
-.w{max-width:540px;margin:0 auto;padding:28px 22px}
+body{margin:0;font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+.w{max-width:580px;margin:0 auto;padding:28px 22px 40px}
 header{display:flex;align-items:center;gap:12px}
 header img{width:44px;height:44px;border-radius:10px}
 header a{color:var(--ink);text-decoration:none;font-weight:700;letter-spacing:.12em}
-.box{background:#fff;border:1px solid #ddd8d0;border-radius:10px;padding:24px;margin-top:26px}
+.box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin-top:26px}
 h2{margin:0 0 8px;font-size:20px}
-button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:12px 22px;font:600 16px system-ui;cursor:pointer}
-button.lk{background:none;color:var(--mut);padding:4px 8px;font:14px system-ui;text-decoration:underline;margin-left:auto}
+p{margin:0 0 10px}
+button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:12px 22px;font:600 16px system-ui,sans-serif;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.lk{background:none;color:var(--mut);padding:4px 8px;font:14px system-ui,sans-serif;text-decoration:underline;margin-left:auto}
 button.sec{background:#fff;color:var(--ink);border:1px solid #bbb4a8}
-button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 ul{list-style:none;padding:0;margin:12px 0}
-#list li{padding:14px 0;border-bottom:1px solid #eee}
+#list>li{padding:20px 0;border-bottom:1px solid #eee}
+#list>li:last-child{border-bottom:0}
 .top{display:flex;align-items:center;gap:10px}
-.top img{width:36px;height:36px;border-radius:50%}
-.ok{margin:6px 0 0;font-size:14px;color:#1b7a3d}
+.top img{width:38px;height:38px;border-radius:50%;object-fit:cover}
+.who{font-size:15px;color:var(--mut);margin:12px 0 0}
+.who b{color:var(--ink)}
+.row{margin-top:16px}
+label.f,legend{display:block;margin:0 0 5px;padding:0;font-size:14px;font-weight:600;color:var(--mut)}
+fieldset{border:0;margin:16px 0 0;padding:0;min-width:0}
+label.cb{display:flex;align-items:flex-start;gap:8px;font-size:15px;margin:5px 0;cursor:pointer}
+label.cb input{margin-top:5px}
+select,textarea,input[type=file]{width:100%;font:15px system-ui,sans-serif;color:var(--ink);background:#fff;border:1px solid #bbb4a8;border-radius:8px;padding:10px}
+textarea{resize:vertical;min-height:90px}
+.count{font-size:12px;color:var(--mut);text-align:right;margin:2px 0 0}
+video.pv{display:block;width:100%;max-height:320px;margin-top:10px;border-radius:8px;background:#000}
+.hint{font-size:13px;color:var(--mut);margin:6px 0 0}
+.sub{margin:6px 0 0 24px}
+.consent{font-size:13px;margin:18px 0 0}
+.consent a{color:var(--ink)}
+progress{display:block;width:100%;height:8px;margin:12px 0 0}
+.st{margin:10px 0 0;font-size:15px;color:var(--mut)}
 #msg{margin-top:16px;color:var(--mut)}
-.err{color:#b3261e!important}
+.err{color:var(--bad)!important}.ok{color:var(--good)!important}
 footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14px;color:var(--mut)}
 </style>
 </head>
@@ -35,13 +55,13 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 
 <div class="box" id="out">
 <h2>Connect your TikTok</h2>
-<p>Log in so DIANA can post your videos to your TikTok account. You approve access on TikTok, and you can remove an account here at any time.</p>
+<p>Log in so DIANA can post your own videos to your TikTok account. You approve access on TikTok, and you can remove an account here at any time.</p>
 <button id="login">Login with TikTok</button>
 </div>
 
 <div class="box" id="in" hidden>
-<h2>Your TikTok accounts</h2>
-<p>These accounts are connected to DIANA. You can add as many as you need.</p>
+<h2>Post to TikTok</h2>
+<p>Choose a video, review the settings and press Post. Nothing is sent to TikTok until you confirm.</p>
 <ul id="list"></ul>
 <button class="sec" id="add">Add another TikTok account</button>
 </div>
@@ -51,35 +71,241 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 </div>
 
 <script>
-/* ===== CHANGE THESE WHEN NEEDED (sandbox vs production) ===== */
 const CFG={
   clientKey:"awh7jozdztrtubpy",
-  redirectUri:"https://diana.jawadquresh0310.workers.dev/callback"
+  redirectUri:"https://diana.jawadquresh0310.workers.dev/callback",
+  api:"https://diana.jawadquresh0310.workers.dev"
 };
-/* =========================================================== */
+const LABEL={PUBLIC_TO_EVERYONE:"Everyone",MUTUAL_FOLLOW_FRIENDS:"Friends",FOLLOWER_OF_CREATOR:"Followers",SELF_ONLY:"Only me"};
+const MUSIC="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en";
+const BRAND="https://www.tiktok.com/legal/page/global/bc-policy/en";
+const MAX_BYTES=50*1024*1024;
+const FRIENDLY={
+  unaudited_client_can_only_post_to_private_accounts:"This app is not yet approved by TikTok for public posting. Set your TikTok account to private and choose \u201cOnly me\u201d.",
+  spam_risk_too_many_posts:"This TikTok account has reached its posting limit for now. Please try again later.",
+  spam_risk_user_banned_from_posting:"TikTok is not allowing this account to post right now.",
+  reached_active_user_cap:"This app has reached its daily limit of posting users. Please try again tomorrow.",
+  access_token_invalid:"Your TikTok login has expired. Remove this account and log in again.",
+  scope_not_authorized:"Posting permission is missing. Remove this account and log in again.",
+  scope_permission_missed:"Posting permission is missing. Remove this account and log in again.",
+  privacy_level_option_mismatch:"That visibility is not available for this account. Choose another option."
+};
 const $=id=>document.getElementById(id),S=sessionStorage,L=localStorage;
 const get=()=>{try{return JSON.parse(L.getItem("diana_accts")||"[]")}catch(e){return[]}};
 const put=a=>L.setItem("diana_accts",JSON.stringify(a));
 const say=(t,c)=>{$("msg").textContent=t;$("msg").className=c||""};
 const el=(tag,props)=>Object.assign(document.createElement(tag),props||{});
+const friendly=j=>(j&&FRIENDLY[j.code])||(j&&j.error)||"TikTok did not accept this request.";
+let uid=0;
+const nid=()=>"f"+(++uid);
+
+async function api(path,x){
+  const r=await fetch(CFG.api+path,{headers:{"X-Sid":x.sid}});
+  return r.json();
+}
+
+/* Sends the video to the Worker and reports upload progress */
+function sendVideo(x,file,meta,onProgress){
+  return new Promise((resolve,reject)=>{
+    const r=new XMLHttpRequest();
+    r.open("POST",CFG.api+"/upload");
+    r.setRequestHeader("X-Sid",x.sid);
+    r.setRequestHeader("X-Size",String(file.size));
+    r.setRequestHeader("X-Meta",encodeURIComponent(JSON.stringify(meta)));
+    r.upload.onprogress=e=>{if(e.lengthComputable)onProgress(e.loaded/e.total)};
+    r.onload=()=>{try{resolve(JSON.parse(r.responseText))}catch(e){reject(e)}};
+    r.onerror=()=>reject(new Error("network"));
+    r.send(file);
+  });
+}
 
 function render(){
   const a=get();
   $("out").hidden=a.length>0;$("in").hidden=!a.length;
   const ul=$("list");ul.textContent="";
-  a.forEach((x,i)=>{
-    const li=el("li"),top=el("div",{className:"top"}),im=el("img",{alt:""}),
-      nm=el("b",{textContent:x.name||"TikTok account"}),
-      rm=el("button",{className:"lk",textContent:"Remove"});
-    im.src=/^https:/.test(x.avatar||"")?x.avatar:"icon.png";
-    rm.onclick=()=>{put(get().filter((_,j)=>j!==i));render()};
-    top.append(im,nm,rm);
-    li.append(top,el("p",{className:"ok",textContent:"Connected"}));
-    ul.append(li);
-  });
+  a.forEach((x,i)=>ul.append(card(x,i)));
 }
 
-// Back from TikTok via the Worker: #sid=..&open=..&name=..&avatar=..&state=..
+function card(x,i){
+  const li=el("li"),top=el("div",{className:"top"}),im=el("img",{alt:""}),
+    nm=el("b",{textContent:x.name||"TikTok account"}),
+    rm=el("button",{className:"lk",textContent:"Remove",type:"button"});
+  im.src=/^https:/.test(x.avatar||"")?x.avatar:"icon.png";
+  rm.onclick=()=>{put(get().filter((_,j)=>j!==i));render()};
+  top.append(im,nm,rm);
+  const body=el("div");
+  body.append(el("p",{className:"hint",textContent:"Loading your TikTok posting options..."}));
+  li.append(top,body);
+  api("/creator",x).then(c=>{
+    body.textContent="";
+    if(!c.ok){body.append(el("p",{className:"err",textContent:friendly(c)}));return}
+    form(body,x,c);
+  }).catch(()=>{
+    body.textContent="";
+    body.append(el("p",{className:"err",textContent:"Network error. Reload the page and try again."}));
+  });
+  return li;
+}
+
+function form(body,x,c){
+  /* 1) Which account will receive the post */
+  const who=el("p",{className:"who"});
+  who.append("Posting to ",el("b",{textContent:c.nickname}),c.username?" (@"+c.username+")":"");
+  body.append(who);
+
+  /* 2) Video + preview */
+  const f=el("input",{type:"file",accept:"video/mp4,video/quicktime,video/webm",id:nid()});
+  const pv=el("video",{controls:true,className:"pv"});pv.hidden=true;
+  const r1=el("div",{className:"row"});
+  r1.append(el("label",{className:"f",htmlFor:f.id,textContent:"Video"}),f,pv);
+
+  /* 3) Caption */
+  const cap=el("textarea",{maxLength:2200,placeholder:"Write a caption",id:nid()});
+  const cnt=el("p",{className:"count",textContent:"0 / 2200"});
+  cap.oninput=()=>{cnt.textContent=cap.value.length+" / 2200"};
+  const r2=el("div",{className:"row"});
+  r2.append(el("label",{className:"f",htmlFor:cap.id,textContent:"Caption"}),cap,cnt);
+
+  /* 4) Privacy: options come from TikTok, nothing preselected */
+  const pr=el("select",{id:nid()});
+  pr.append(el("option",{value:"",textContent:"Select who can watch..."}));
+  let selfOpt=null;
+  c.privacy.forEach(p=>{
+    const o=el("option",{value:p,textContent:LABEL[p]||p});
+    if(p==="SELF_ONLY")selfOpt=o;
+    pr.append(o);
+  });
+  const r3=el("div",{className:"row"});
+  r3.append(el("label",{className:"f",htmlFor:pr.id,textContent:"Who can watch this video"}),pr);
+
+  /* 5) Interactions: all off by default, greyed out if the creator disabled them in TikTok */
+  const fs1=el("fieldset");fs1.append(el("legend",{textContent:"Allow people to"}));
+  const ia=(text,off)=>{
+    const l=el("label",{className:"cb"}),i=el("input",{type:"checkbox",disabled:!!off});
+    l.append(i,text+(off?" (turned off in your TikTok settings)":""));
+    fs1.append(l);return i;
+  };
+  const cm=ia("Comment",c.commentDisabled),du=ia("Duet",c.duetDisabled),sti=ia("Stitch",c.stitchDisabled);
+
+  /* 6) Commercial content disclosure: off by default */
+  const fs2=el("fieldset");fs2.append(el("legend",{textContent:"Content disclosure"}));
+  const cl=el("label",{className:"cb"}),ci=el("input",{type:"checkbox"});
+  cl.append(ci,"Disclose commercial content (this content promotes yourself, a brand, product or service)");
+  const sub=el("div",{className:"sub"});sub.hidden=true;
+  const ol=el("label",{className:"cb"}),oi=el("input",{type:"checkbox"});
+  ol.append(oi,"Your brand");
+  const tl=el("label",{className:"cb"}),ti=el("input",{type:"checkbox"});
+  tl.append(ti,"Branded content");
+  const dh=el("p",{className:"hint"});
+  sub.append(ol,tl,dh);
+  fs2.append(cl,sub);
+
+  /* 7) Consent, Post button, progress, status */
+  const consent=el("p",{className:"consent"});
+  const post=el("button",{textContent:"Post to TikTok",type:"button",disabled:true});
+  const bar=el("progress",{max:100,value:0});bar.hidden=true;
+  const st=el("p",{className:"st",role:"status"});
+  const note=el("p",{className:"hint",textContent:"After you post, it can take a few minutes for the video to process and appear on your profile."});
+  const r4=el("div",{className:"row"});r4.append(post);
+  body.append(r1,r2,r3,fs1,fs2,consent,r4,bar,note,st);
+
+  let tooBig=false,tooLong=false,busy=false;
+  const inputs=[f,cap,pr,cm,du,sti,ci,oi,ti];
+  const msg=(t,k)=>{st.textContent=t;st.className="st "+(k||"")};
+  const lock=b=>{busy=b;inputs.forEach(i=>{if(b)i.disabled=true;else if(i!==cm&&i!==du&&i!==sti)i.disabled=false});
+    if(!b){cm.disabled=!!c.commentDisabled;du.disabled=!!c.duetDisabled;sti.disabled=!!c.stitchDisabled}upd()};
+
+  function upd(){
+    const comm=ci.checked,own=oi.checked,third=ti.checked;
+    sub.hidden=!comm;
+
+    /* Branded content cannot be private */
+    const noPrivate=comm&&third;
+    if(selfOpt){
+      selfOpt.disabled=noPrivate;
+      selfOpt.title=noPrivate?"Branded content visibility cannot be set to private.":"";
+    }
+    if(noPrivate&&pr.value==="SELF_ONLY")pr.value="";
+
+    const needPick=comm&&!own&&!third;
+    let hint="",bad=false;
+    if(needPick){hint="You need to indicate if your content promotes yourself, a third party, or both.";bad=true}
+    else if(comm&&third){hint="Your video will be labeled as \u2018Paid partnership\u2019."+(selfOpt?" Branded content visibility cannot be set to private.":"")}
+    else if(comm&&own){hint="Your video will be labeled as \u2018Promotional content\u2019."}
+    dh.textContent=hint;dh.className="hint"+(bad?" err":"");
+
+    consent.textContent="By posting, you agree to TikTok\u2019s ";
+    if(comm&&third)consent.append(el("a",{href:BRAND,target:"_blank",rel:"noopener",textContent:"Branded Content Policy"})," and ");
+    consent.append(el("a",{href:MUSIC,target:"_blank",rel:"noopener",textContent:"Music Usage Confirmation"}),".");
+
+    post.disabled=busy||!(f.files[0]&&pr.value)||needPick||tooBig||tooLong;
+    post.title=needPick?"You need to indicate if your content promotes yourself, a third party, or both.":"";
+  }
+
+  f.onchange=()=>{
+    tooBig=false;tooLong=false;msg("");
+    if(pv.src)URL.revokeObjectURL(pv.src);
+    const file=f.files[0];
+    if(!file){pv.removeAttribute("src");pv.hidden=true;upd();return}
+    if(file.size>MAX_BYTES){tooBig=true;msg("This video is over 50 MB. Choose a smaller one.","err")}
+    pv.onloadedmetadata=()=>{
+      if(c.maxDuration&&pv.duration>c.maxDuration){
+        tooLong=true;msg("This video is longer than this TikTok account allows ("+c.maxDuration+" seconds).","err");upd();
+      }
+    };
+    pv.src=URL.createObjectURL(file);pv.hidden=false;
+    upd();
+  };
+  [pr,ci,oi,ti].forEach(e=>e.onchange=upd);
+
+  const reset=()=>{
+    f.value="";cap.value="";cnt.textContent="0 / 2200";pr.value="";
+    [cm,du,sti,ci,oi,ti].forEach(i=>{i.checked=false});
+    f.onchange();
+  };
+
+  post.onclick=async()=>{
+    const file=f.files[0];
+    if(!file||post.disabled)return;
+    const comm=ci.checked;
+    const meta={
+      title:cap.value.trim(),privacy:pr.value,
+      disable_comment:!cm.checked,disable_duet:!du.checked,disable_stitch:!sti.checked,
+      brand_organic:comm&&oi.checked,brand_content:comm&&ti.checked,
+      type:file.type||"video/mp4"
+    };
+    lock(true);bar.value=0;bar.hidden=false;
+    msg("Uploading to TikTok. Keep this page open.");
+    try{
+      const j=await sendVideo(x,file,meta,p=>{bar.value=Math.round(p*100)});
+      bar.hidden=true;
+      if(!j.ok){msg(friendly(j),"err");lock(false);return}
+      msg("Sent to TikTok. Checking progress...");
+      let n=0;
+      const poll=async()=>{
+        n++;
+        try{
+          const s=await api("/status?pid="+encodeURIComponent(j.publish_id),x);
+          if(s.status==="PUBLISH_COMPLETE"){
+            msg("Posted to TikTok. It can take a few minutes for the video to appear on your profile.","ok");
+            reset();lock(false);return;
+          }
+          if(s.status==="FAILED"){
+            msg("TikTok could not publish this video"+(s.fail_reason?" ("+s.fail_reason+")":"")+".","err");
+            lock(false);return;
+          }
+        }catch(e){}
+        if(n<24)setTimeout(poll,5000);
+        else{msg("Sent to TikTok. It can take a few minutes to process and appear on your profile.","ok");reset();lock(false)}
+      };
+      setTimeout(poll,4000);
+    }catch(e){bar.hidden=true;msg("Network error. Please try again.","err");lock(false)}
+  };
+
+  upd();
+}
+
+// Back from TikTok via the Worker: #sid=..&open=..&name=..&avatar=..&state=..  (or #error=..)
 if(location.hash.length>1){
   const h=new URLSearchParams(location.hash.slice(1));
   if(h.get("sid")){
@@ -88,6 +314,8 @@ if(location.hash.length>1){
       a.push({sid:h.get("sid"),open:h.get("open"),name:h.get("name"),avatar:h.get("avatar"),on:true});
       put(a);
     }else say("Login check failed. Please try again.","err");
+  }else if(h.get("error")){
+    say("TikTok login was not completed ("+h.get("error")+"). Please try again.","err");
   }
   history.replaceState(null,"",location.pathname);
 }
