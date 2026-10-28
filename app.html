@@ -44,6 +44,8 @@ video.pv{display:block;width:100%;max-height:320px;margin-top:10px;border-radius
 .consent a{color:var(--ink)}
 progress{display:block;width:100%;height:8px;margin:12px 0 0}
 .st{margin:10px 0 0;font-size:15px;color:var(--mut)}
+.st.ok{font-weight:600;background:#e9f6ee;border:1px solid #b9dfc6;border-radius:8px;padding:12px 14px}
+.st a{color:inherit}
 #msg{margin-top:16px;color:var(--mut)}
 .err{color:var(--bad)!important}.ok{color:var(--good)!important}
 footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14px;color:var(--mut)}
@@ -159,12 +161,12 @@ function form(body,x,c){
   const r1=el("div",{className:"row"});
   r1.append(el("label",{className:"f",htmlFor:f.id,textContent:"Video"}),f,pv);
 
-  /* 3) Caption */
-  const cap=el("textarea",{maxLength:2200,placeholder:"Write a caption",id:nid()});
+  /* 3) Title (editable, nothing preset) */
+  const cap=el("textarea",{maxLength:2200,placeholder:"Write a title or caption",id:nid()});
   const cnt=el("p",{className:"count",textContent:"0 / 2200"});
   cap.oninput=()=>{cnt.textContent=cap.value.length+" / 2200"};
   const r2=el("div",{className:"row"});
-  r2.append(el("label",{className:"f",htmlFor:cap.id,textContent:"Caption"}),cap,cnt);
+  r2.append(el("label",{className:"f",htmlFor:cap.id,textContent:"Title"}),cap,cnt);
 
   /* 4) Privacy: options come from TikTok, nothing preselected */
   const pr=el("select",{id:nid()});
@@ -176,7 +178,8 @@ function form(body,x,c){
     pr.append(o);
   });
   const r3=el("div",{className:"row"});
-  r3.append(el("label",{className:"f",htmlFor:pr.id,textContent:"Who can watch this video"}),pr);
+  r3.append(el("label",{className:"f",htmlFor:pr.id,textContent:"Who can watch this video"}),pr,
+    el("p",{className:"hint",textContent:"Until TikTok approves DIANA for public posting, posts are visible only to you."}));
 
   /* 5) Interactions: all off by default, greyed out if the creator disabled them in TikTok */
   const fs1=el("fieldset");fs1.append(el("legend",{textContent:"Allow people to"}));
@@ -190,6 +193,7 @@ function form(body,x,c){
   /* 6) Commercial content disclosure: off by default */
   const fs2=el("fieldset");fs2.append(el("legend",{textContent:"Content disclosure"}));
   const cl=el("label",{className:"cb"}),ci=el("input",{type:"checkbox"});
+  ci.setAttribute("role","switch");
   cl.append(ci,"Disclose commercial content (this content promotes yourself, a brand, product or service)");
   const sub=el("div",{className:"sub"});sub.hidden=true;
   const ol=el("label",{className:"cb"}),oi=el("input",{type:"checkbox"});
@@ -212,6 +216,11 @@ function form(body,x,c){
   let tooBig=false,tooLong=false,busy=false;
   const inputs=[f,cap,pr,cm,du,sti,ci,oi,ti];
   const msg=(t,k)=>{st.textContent=t;st.className="st "+(k||"")};
+  /* Success banner: stays on screen until the user picks another video */
+  const done=t=>{
+    msg(t,"ok");
+    if(c.username)st.append(" ",el("a",{href:"https://www.tiktok.com/@"+encodeURIComponent(c.username),target:"_blank",rel:"noopener",textContent:"View your TikTok profile"}));
+  };
   const lock=b=>{busy=b;inputs.forEach(i=>{if(b)i.disabled=true;else if(i!==cm&&i!==du&&i!==sti)i.disabled=false});
     if(!b){cm.disabled=!!c.commentDisabled;du.disabled=!!c.duetDisabled;sti.disabled=!!c.stitchDisabled}upd()};
 
@@ -225,6 +234,7 @@ function form(body,x,c){
       selfOpt.disabled=noPrivate;
       selfOpt.title=noPrivate?"Branded content visibility cannot be set to private.":"";
     }
+    pr.title=noPrivate?"Branded content visibility cannot be set to private.":"";
     if(noPrivate&&pr.value==="SELF_ONLY")pr.value="";
 
     const needPick=comm&&!own&&!third;
@@ -239,7 +249,8 @@ function form(body,x,c){
     consent.append(el("a",{href:MUSIC,target:"_blank",rel:"noopener",textContent:"Music Usage Confirmation"}),".");
 
     post.disabled=busy||!(f.files[0]&&pr.value)||needPick||tooBig||tooLong;
-    post.title=needPick?"You need to indicate if your content promotes yourself, a third party, or both.":"";
+    /* Tooltip sits on the wrapper: disabled buttons do not show hover text in every browser */
+    r4.title=needPick?"You need to indicate if your content promotes yourself, a third party, or both.":"";
   }
 
   f.onchange=()=>{
@@ -287,16 +298,20 @@ function form(body,x,c){
         try{
           const s=await api("/status?pid="+encodeURIComponent(j.publish_id),x);
           if(s.status==="PUBLISH_COMPLETE"){
-            msg("Posted to TikTok. It can take a few minutes for the video to appear on your profile.","ok");
-            reset();lock(false);return;
+            /* Reset the form FIRST, then show the success message, so reset cannot erase it */
+            const shown=LABEL[meta.privacy]||meta.privacy;
+            reset();lock(false);
+            done("Success: your video was published to TikTok with visibility \u201c"+shown+"\u201d. It can take a few minutes to appear on your profile.");
+            return;
           }
           if(s.status==="FAILED"){
             msg("TikTok could not publish this video"+(s.fail_reason?" ("+s.fail_reason+")":"")+".","err");
             lock(false);return;
           }
+          if(s.status)msg("TikTok is processing your video ("+String(s.status).toLowerCase().replace(/_/g," ")+")...");
         }catch(e){}
         if(n<24)setTimeout(poll,5000);
-        else{msg("Sent to TikTok. It can take a few minutes to process and appear on your profile.","ok");reset();lock(false)}
+        else{reset();lock(false);msg("Sent to TikTok. Processing is taking longer than usual. Check your TikTok profile in a few minutes.","ok")}
       };
       setTimeout(poll,4000);
     }catch(e){bar.hidden=true;msg("Network error. Please try again.","err");lock(false)}
