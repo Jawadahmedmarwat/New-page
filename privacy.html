@@ -1,41 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Privacy Policy - DIANA</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy - DIANA</title>
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+:root{--ink:#16213e;--bg:#f7f5f2;--acc:#e8466a;--mut:#5b6478}
+body{margin:0;font:17px/1.7 Georgia,serif;color:var(--ink);background:var(--bg)}
+.w{max-width:720px;margin:0 auto;padding:28px 22px 48px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+header img{width:44px;height:44px;border-radius:10px}
+header a{font:700 20px system-ui,sans-serif;letter-spacing:.12em;color:var(--ink);text-decoration:none}
+h1{font-size:34px;line-height:1.15;margin:0 0 6px}
+h2{font-size:21px;margin:34px 0 8px}
+.d{color:var(--mut);font:14px system-ui,sans-serif}
+a{color:var(--acc)}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid #d9d4cc;font:14px system-ui,sans-serif}
+footer a{margin-right:16px}
+</style>
 </head>
 <body>
-  <h1>Privacy Policy</h1>
-  <p>Last updated: September 25, 2026</p>
+<div class="w">
+<header><img src="icon.png" alt="DIANA logo"><a href="index.html">DIANA</a></header>
+<h1>Privacy Policy</h1>
+<p class="d">Last updated: October 28, 2026</p>
 
-  <p>This Privacy Policy explains how DIANA ("we", "our", "the app") collects, uses, and protects your information when you use our services, including when you connect your TikTok account.</p>
+<p>DIANA is a web tool that lets creators send their own videos to their own TikTok account. This policy explains what data DIANA handles, why, and how you can remove it.</p>
 
-  <h2>Information We Collect</h2>
-  <p>When you log in with TikTok or use our Content Posting features, we may collect:</p>
-  <ul>
-    <li>Basic profile information (display name, avatar, open ID)</li>
-    <li>Content you choose to post or upload through our app</li>
-    <li>Usage data related to how you interact with our app</li>
-  </ul>
+<h2>Data we handle</h2>
+<p>When you log in with TikTok, DIANA receives, with your approval:</p>
+<ul>
+<li>Your TikTok display name, avatar and open ID (scope <code>user.info.basic</code>).</li>
+<li>An access token and a refresh token that let DIANA act on your account within the permissions you approved (<code>video.upload</code>, and <code>video.publish</code> where posting is enabled).</li>
+<li>Your posting options from TikTok, such as your nickname, allowed privacy levels and maximum video length.</li>
+</ul>
+<p>When you choose to post, the video file and the title, privacy and interaction settings you select are sent to TikTok. DIANA does not keep a copy of your video after it has been delivered to TikTok.</p>
+<p>Your browser stores a session identifier and the name and avatar of the connected account, so the page can remember you. DIANA does not use advertising or analytics trackers.</p>
 
-  <h2>How We Use Your Information</h2>
-  <p>We use the information we collect to:</p>
-  <ul>
-    <li>Provide and operate the app's core features</li>
-    <li>Allow you to post or upload content to your TikTok account with your permission</li>
-    <li>Improve our services and user experience</li>
-  </ul>
+<h2>How we use it</h2>
+<p>Only to run the features you request: showing which account is connected, and sending the video you selected to that account. We do not sell your data, share it for advertising, or use it to profile you.</p>
 
-  <h2>Data Sharing</h2>
-  <p>We do not sell your personal information. We only share data with TikTok as necessary to provide the features you request, and in accordance with TikTok's own policies.</p>
+<h2>Who processes it</h2>
+<p>TikTok receives the content you choose to post, under TikTok's own terms and privacy policy. DIANA's pages are hosted on GitHub Pages, and its login and upload service runs on Cloudflare, which stores your tokens on our behalf.</p>
 
-  <h2>Data Retention</h2>
-  <p>We retain your information only as long as necessary to provide our services, unless a longer retention period is required by law.</p>
+<h2>Retention and deletion</h2>
+<p>Tokens and profile details are kept only while your account is connected. You can delete them at any time by pressing <b>Remove</b> next to your account in DIANA, and you can also revoke DIANA's access in your TikTok app settings. On request, we will confirm deletion of any remaining data within 30 days.</p>
 
-  <h2>Your Rights</h2>
-  <p>You may request access to, correction of, or deletion of your personal data at any time by contacting us.</p>
+<h2>Security</h2>
+<p>Tokens are stored server-side, never in the page, and traffic is encrypted with HTTPS. No online service is perfectly secure, so we limit what we store to what the features need.</p>
 
-  <h2>Contact Us</h2>
-  <p>If you have any questions about this Privacy Policy, contact us at: <strong>[your email here]</strong></p>
+<h2>Children</h2>
+<p>DIANA is not intended for anyone under the minimum age required to use TikTok in their country, and we do not knowingly collect data from them.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, we will update the date above. Continued use after a change means you accept the updated policy.</p>
+
+<h2>Contact</h2>
+<p>Questions, access or deletion requests: <a href="mailto:ahmed034659@gmail.com">ahmed034659@gmail.com</a></p>
+
+<footer><a href="index.html">Home</a><a href="terms.html">Terms of Service</a><a href="privacy.html">Privacy Policy</a></footer>
+</div>
 </body>
 </html>
