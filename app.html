@@ -48,6 +48,24 @@ progress{display:block;width:100%;height:8px;margin:12px 0 0}
 .st a{color:inherit}
 #msg{margin-top:16px;color:var(--mut)}
 .err{color:var(--bad)!important}.ok{color:var(--good)!important}
+.tip{position:relative;display:block}
+.tip[data-tip]:hover::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);background:#16213e;color:#fff;font-size:14px;line-height:1.4;padding:8px 12px;border-radius:6px;z-index:30;width:max-content;max-width:100%}
+.dd{position:relative}
+.dd>button{width:100%;display:flex;justify-content:space-between;background:#fff;color:var(--ink);border:1px solid #bbb4a8;font:15px system-ui,sans-serif;font-weight:400}
+.dd ul{position:absolute;left:0;right:0;top:100%;margin:4px 0 0;background:#fff;border:1px solid #bbb4a8;border-radius:8px;z-index:10;padding:4px 0}
+.dd li{position:relative;padding:10px 12px;cursor:pointer;font-size:15px}
+.dd li:hover{background:#f1eee9}
+.dd li[aria-disabled=true]{color:#9a9a9a;cursor:not-allowed}
+.dd li[data-tip]:hover::after{content:attr(data-tip);position:absolute;left:12px;top:100%;background:#16213e;color:#fff;font-size:14px;padding:8px 12px;border-radius:6px;z-index:40;width:max-content;max-width:90%}
+.sw{appearance:none;-webkit-appearance:none;position:relative;width:42px;height:24px;flex:none;background:#bbb4a8;border-radius:12px;cursor:pointer}
+label.cb .sw{margin-top:2px}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.sw:checked{background:var(--good)}.sw:checked::after{left:21px}
+label.cb:has(input:disabled){color:#9a9a9a;cursor:not-allowed}
+.sub .hint{font-size:14px;font-weight:600;color:var(--ink)}
+.consent{font-size:15px;font-weight:600}
+.tip button:disabled{pointer-events:none}
+.note{font-size:14px;color:var(--ink)}
 footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14px;color:var(--mut)}
 </style>
 </head>
@@ -154,6 +172,7 @@ function form(body,x,c){
   const who=el("p",{className:"who"});
   who.append("Posting to ",el("b",{textContent:c.nickname}),c.username?" (@"+c.username+")":"");
   body.append(who);
+  body.append(el("p",{className:"hint",textContent:"Account details were just retrieved from TikTok."+(c.maxDuration?" Maximum video length for this account: "+c.maxDuration+" seconds.":"")}));
 
   /* 2) Video + preview */
   const f=el("input",{type:"file",accept:"video/mp4,video/quicktime,video/webm",id:nid()});
@@ -169,16 +188,29 @@ function form(body,x,c){
   r2.append(el("label",{className:"f",htmlFor:cap.id,textContent:"Title"}),cap,cnt);
 
   /* 4) Privacy: options come from TikTok, nothing preselected */
-  const pr=el("select",{id:nid()});
-  pr.append(el("option",{value:"",textContent:"Select who can watch..."}));
-  let selfOpt=null;
+  const ddBtn=el("button",{type:"button",id:nid()});
+  ddBtn.setAttribute("aria-haspopup","listbox");
+  const ddList=el("ul");ddList.setAttribute("role","listbox");ddList.hidden=true;
+  const dd=el("div",{className:"dd"});dd.append(ddBtn,ddList);
+  let val="",selfOpt=null;
+  const pr={onchange:null,
+    get value(){return val},
+    set value(v){val=v;ddBtn.textContent="";ddBtn.append(el("span",{textContent:v?(LABEL[v]||v):"Select who can watch..."}),el("span",{textContent:"\u25BE"}))},
+    get disabled(){return ddBtn.disabled},
+    set disabled(b){ddBtn.disabled=b}};
+  pr.value="";
   c.privacy.forEach(p=>{
-    const o=el("option",{value:p,textContent:LABEL[p]||p});
-    if(p==="SELF_ONLY")selfOpt=o;
-    pr.append(o);
+    const li=el("li",{textContent:LABEL[p]||p});li.setAttribute("role","option");li.tabIndex=0;
+    li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();li.onclick()}else if(e.key==="Escape"){ddList.hidden=true;ddBtn.focus()}else if(e.key==="ArrowDown"&&li.nextSibling)li.nextSibling.focus();else if(e.key==="ArrowUp"&&li.previousSibling)li.previousSibling.focus()};
+    li.onclick=()=>{if(li.getAttribute("aria-disabled")==="true")return;pr.value=p;ddList.hidden=true;if(pr.onchange)pr.onchange()};
+    if(p==="SELF_ONLY")selfOpt=li;
+    ddList.append(li);
   });
+  ddBtn.onclick=()=>{ddList.hidden=!ddList.hidden};
+  ddBtn.onkeydown=e=>{if(e.key==="ArrowDown"){e.preventDefault();ddList.hidden=false;const o=ddList.querySelector('li:not([aria-disabled="true"])');if(o)o.focus()}};
+  document.addEventListener("click",e=>{if(!dd.contains(e.target))ddList.hidden=true});
   const r3=el("div",{className:"row"});
-  r3.append(el("label",{className:"f",htmlFor:pr.id,textContent:"Who can watch this video"}),pr,
+  r3.append(el("label",{className:"f",htmlFor:ddBtn.id,textContent:"Who can watch this video"}),dd,
     el("p",{className:"hint",textContent:"Until TikTok approves DIANA for public posting, posts are visible only to you."}));
 
   /* 5) Interactions: all off by default, greyed out if the creator disabled them in TikTok */
@@ -192,7 +224,7 @@ function form(body,x,c){
 
   /* 6) Commercial content disclosure: off by default */
   const fs2=el("fieldset");fs2.append(el("legend",{textContent:"Content disclosure"}));
-  const cl=el("label",{className:"cb"}),ci=el("input",{type:"checkbox"});
+  const cl=el("label",{className:"cb"}),ci=el("input",{type:"checkbox",className:"sw"});
   ci.setAttribute("role","switch");
   cl.append(ci,"Disclose commercial content (this content promotes yourself, a brand, product or service)");
   const sub=el("div",{className:"sub"});sub.hidden=true;
@@ -209,8 +241,8 @@ function form(body,x,c){
   const post=el("button",{textContent:"Post to TikTok",type:"button",disabled:true});
   const bar=el("progress",{max:100,value:0});bar.hidden=true;
   const st=el("p",{className:"st",role:"status"});
-  const note=el("p",{className:"hint",textContent:"After you post, it can take a few minutes for the video to process and appear on your profile."});
-  const r4=el("div",{className:"row"});r4.append(post);
+  const note=el("p",{className:"hint note",textContent:"After you post, it can take a few minutes for the video to process and appear on your profile."});
+  const r4=el("div",{className:"row tip"});r4.append(post);
   body.append(r1,r2,r3,fs1,fs2,consent,r4,bar,note,st);
 
   let tooBig=false,tooLong=false,busy=false;
@@ -231,17 +263,19 @@ function form(body,x,c){
     /* Branded content cannot be private */
     const noPrivate=comm&&third;
     if(selfOpt){
-      selfOpt.disabled=noPrivate;
-      selfOpt.title=noPrivate?"Branded content visibility cannot be set to private.":"";
+      selfOpt.setAttribute("aria-disabled",noPrivate?"true":"false");
+      if(noPrivate)selfOpt.dataset.tip="Branded content visibility cannot be set to private.";else delete selfOpt.dataset.tip;
     }
-    pr.title=noPrivate?"Branded content visibility cannot be set to private.":"";
     if(noPrivate&&pr.value==="SELF_ONLY")pr.value="";
 
     const needPick=comm&&!own&&!third;
     let hint="",bad=false;
     if(needPick){hint="You need to indicate if your content promotes yourself, a third party, or both.";bad=true}
-    else if(comm&&third){hint="Your video will be labeled as \u2018Paid partnership\u2019."+(selfOpt?" Branded content visibility cannot be set to private.":"")}
-    else if(comm&&own){hint="Your video will be labeled as \u2018Promotional content\u2019."}
+    else if(comm&&third){hint="Your photo/video will be labeled as 'Paid partnership'"}
+    else if(comm&&own){hint="Your photo/video will be labeled as 'Promotional content'"}
+    const priv=pr.value==="SELF_ONLY";
+    ti.disabled=busy||(priv&&!third);
+    if(comm&&priv)hint+=(hint?" ":"")+"Visibility for branded content can't be private.";
     dh.textContent=hint;dh.className="hint"+(bad?" err":"");
 
     consent.textContent="By posting, you agree to TikTok\u2019s ";
@@ -250,7 +284,7 @@ function form(body,x,c){
 
     post.disabled=busy||!(f.files[0]&&pr.value)||needPick||tooBig||tooLong;
     /* Tooltip sits on the wrapper: disabled buttons do not show hover text in every browser */
-    r4.title=needPick?"You need to indicate if your content promotes yourself, a third party, or both.":"";
+    if(needPick)r4.dataset.tip="You need to indicate if your content promotes yourself, a third party, or both.";else delete r4.dataset.tip;
   }
 
   f.onchange=()=>{
@@ -278,6 +312,8 @@ function form(body,x,c){
   post.onclick=async()=>{
     const file=f.files[0];
     if(!file||post.disabled)return;
+    post.disabled=true;
+    try{const cc=await api("/creator",x);if(!cc.ok){msg(friendly(cc),"err");upd();return}}catch(e){}
     const comm=ci.checked;
     const meta={
       title:cap.value.trim(),privacy:pr.value,
