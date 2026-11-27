@@ -75,7 +75,7 @@ footer{margin-top:30px;font-size:14px;color:var(--mut)}footer a{margin-right:14p
 
 <div class="box" id="out">
 <h2>Connect your TikTok</h2>
-<p>Log in so DIANA can post your own videos to your TikTok account. You approve access on TikTok, and you can remove an account here at any time.</p>
+<p>DIANA is open to any creator. Log in with TikTok to publish your own videos to your own account. You approve access on TikTok, and you can remove your account here at any time.</p>
 <button id="login">Login with TikTok</button>
 </div>
 
@@ -151,7 +151,7 @@ function card(x,i){
     nm=el("b",{textContent:x.name||"TikTok account"}),
     rm=el("button",{className:"lk",textContent:"Remove",type:"button"});
   im.src=/^https:/.test(x.avatar||"")?x.avatar:"icon.png";
-  rm.onclick=()=>{put(get().filter((_,j)=>j!==i));render()};
+  rm.onclick=()=>{fetch(CFG.api+"/logout",{method:"POST",headers:{"X-Sid":x.sid}}).catch(()=>{});put(get().filter((_,j)=>j!==i));render()};
   top.append(im,nm,rm);
   const body=el("div");
   body.append(el("p",{className:"hint",textContent:"Loading your TikTok posting options..."}));
